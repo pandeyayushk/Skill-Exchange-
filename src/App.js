@@ -22,8 +22,14 @@ function App() {
     }
   };
 
-  // 🔥 SEND DATA TO BACKEND
+  // 🔥 SEND DATA TO BACKEND + VALIDATION
   const handleSubmit = async () => {
+    // ✅ VALIDATION
+    if (!name || !skillOffered || !skillNeeded) {
+      alert("All fields are required");
+      return;
+    }
+
     const newUser = {
       name,
       skillOffered,
@@ -32,7 +38,7 @@ function App() {
 
     try {
       await axios.post("http://localhost:5000/add-user", newUser);
-      fetchUsers(); // refresh users
+      fetchUsers();
     } catch (err) {
       console.log(err);
     }
@@ -42,14 +48,17 @@ function App() {
     setSkillNeeded("");
   };
 
-  // MATCHING LOGIC
-  const matchedUsers = users.filter(
-    (user) =>
-      currentUser &&
-      user.skillOffered.toLowerCase() ===
-        currentUser.skillNeeded.toLowerCase() &&
+  // 🔥 IMPROVED MATCHING LOGIC
+  const matchedUsers = users.filter((user) => {
+    if (!currentUser) return false;
+
+    return (
+      user.skillOffered
+        .toLowerCase()
+        .includes(currentUser.skillNeeded.toLowerCase()) &&
       user.name !== currentUser.name
-  );
+    );
+  });
 
   return (
     <div style={{ padding: "20px" }}>
@@ -90,9 +99,7 @@ function App() {
       ))}
 
       <h2>Select User</h2>
-      <select
-        onChange={(e) => setCurrentUser(users[e.target.value])}
-      >
+      <select onChange={(e) => setCurrentUser(users[e.target.value])}>
         <option value="">-- Select User --</option>
         {users.map((user, index) => (
           <option key={index} value={index}>
