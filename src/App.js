@@ -5,6 +5,7 @@ function App() {
   const [skillOffered, setSkillOffered] = useState("");
   const [skillNeeded, setSkillNeeded] = useState("");
   const [users, setUsers] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
 
   const handleSubmit = () => {
     const newUser = {
@@ -15,10 +16,21 @@ function App() {
 
     setUsers([...users, newUser]);
 
+  
+
     setName("");
     setSkillOffered("");
     setSkillNeeded("");
   };
+
+ 
+  const matchedUsers = users.filter(
+    (user) =>
+      currentUser &&
+      user.skillOffered.toLowerCase() ===
+        currentUser.skillNeeded.toLowerCase() &&
+      user.name !== currentUser.name
+  );
 
   return (
     <div style={{ padding: "20px" }}>
@@ -54,6 +66,35 @@ function App() {
           <p><strong>Name:</strong> {user.name}</p>
           <p><strong>Offers:</strong> {user.skillOffered}</p>
           <p><strong>Needs:</strong> {user.skillNeeded}</p>
+          <hr />
+        </div>
+      ))}
+
+      
+      <h2>Select User</h2>
+      <select
+        onChange={(e) => setCurrentUser(users[e.target.value])}
+      >
+        <option value="">-- Select User --</option>
+        {users.map((user, index) => (
+          <option key={index} value={index}>
+            {user.name}
+          </option>
+        ))}
+      </select>
+
+      <h2>Matches For You</h2>
+
+      {!currentUser && <p>Please select a user</p>}
+
+      {currentUser && matchedUsers.length === 0 && (
+        <p>No matches found</p>
+      )}
+
+      {matchedUsers.map((user, index) => (
+        <div key={index}>
+          <p><strong>Name:</strong> {user.name}</p>
+          <p><strong>Offers:</strong> {user.skillOffered}</p>
           <hr />
         </div>
       ))}
