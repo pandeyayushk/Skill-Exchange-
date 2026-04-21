@@ -32,14 +32,12 @@ function App() {
 
     try {
       if (editingUser) {
-        // UPDATE
         await axios.put(
           `http://localhost:5000/update-user/${editingUser._id}`,
           newUser
         );
         setEditingUser(null);
       } else {
-        // CREATE
         await axios.post("http://localhost:5000/add-user", newUser);
       }
 
@@ -74,138 +72,145 @@ function App() {
   });
 
   return (
-    <div style={containerStyle}>
-      <h1>SRM Skill Exchange</h1>
+    <div style={{ backgroundColor: "#f5f7fa", minHeight: "100vh", padding: "20px" }}>
+      <div style={containerStyle}>
+        <h1 style={{ textAlign: "center", marginBottom: "20px" }}>
+          🚀 SRM Skill Exchange
+        </h1>
 
-      <input
-        placeholder="Your Name"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        style={inputStyle}
-      />
+        <input
+          placeholder="Your Name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          style={inputStyle}
+        />
 
-      <input
-        placeholder="Skill You Offer"
-        value={skillOffered}
-        onChange={(e) => setSkillOffered(e.target.value)}
-        style={inputStyle}
-      />
+        <input
+          placeholder="Skill You Offer"
+          value={skillOffered}
+          onChange={(e) => setSkillOffered(e.target.value)}
+          style={inputStyle}
+        />
 
-      <input
-        placeholder="Skill You Need"
-        value={skillNeeded}
-        onChange={(e) => setSkillNeeded(e.target.value)}
-        style={inputStyle}
-      />
+        <input
+          placeholder="Skill You Need"
+          value={skillNeeded}
+          onChange={(e) => setSkillNeeded(e.target.value)}
+          style={inputStyle}
+        />
 
-      <button onClick={handleSubmit} style={buttonStyle}>
-        {editingUser ? "Update" : "Submit"}
-      </button>
+        <button onClick={handleSubmit} style={buttonStyle}>
+          {editingUser ? "Update" : "Submit"}
+        </button>
 
-      <h2>Users</h2>
+        <h2 style={sectionTitle}>Users</h2>
 
-      {users.map((user) => (
-        <div key={user._id} style={cardStyle}>
-          <p><strong>Name:</strong> {user.name}</p>
-          <p><strong>Offers:</strong> {user.skillOffered}</p>
-          <p><strong>Needs:</strong> {user.skillNeeded}</p>
+        {users.map((user) => (
+          <div key={user._id} style={cardStyle}>
+            <p><strong>Name:</strong> {user.name}</p>
+            <p><strong>Offers:</strong> {user.skillOffered}</p>
+            <p><strong>Needs:</strong> {user.skillNeeded}</p>
 
-          {/* EDIT BUTTON */}
-          <button
-            onClick={() => {
-              setEditingUser(user);
-              setName(user.name);
-              setSkillOffered(user.skillOffered);
-              setSkillNeeded(user.skillNeeded);
-            }}
-            style={editBtn}
-          >
-            Edit
-          </button>
+            <button
+              onClick={() => {
+                setEditingUser(user);
+                setName(user.name);
+                setSkillOffered(user.skillOffered);
+                setSkillNeeded(user.skillNeeded);
+              }}
+              style={editBtn}
+            >
+              Edit
+            </button>
 
-          {/* DELETE BUTTON */}
-          <button
-            onClick={() => handleDelete(user._id)}
-            style={deleteBtn}
-          >
-            Delete
-          </button>
-        </div>
-      ))}
-
-      <h2>Select User</h2>
-
-      <select
-        onChange={(e) => setCurrentUser(users[e.target.value])}
-        style={selectStyle}
-      >
-        <option value="">-- Select User --</option>
-        {users.map((user, index) => (
-          <option key={user._id} value={index}>
-            {user.name}
-          </option>
+            <button
+              onClick={() => handleDelete(user._id)}
+              style={deleteBtn}
+            >
+              Delete
+            </button>
+          </div>
         ))}
-      </select>
 
-      <h2>Matches For You</h2>
+        <h2 style={sectionTitle}>Select User</h2>
 
-      {!currentUser && <p>Please select a user</p>}
+        <select
+          onChange={(e) => setCurrentUser(users[e.target.value])}
+          style={selectStyle}
+        >
+          <option value="">-- Select User --</option>
+          {users.map((user, index) => (
+            <option key={user._id} value={index}>
+              {user.name}
+            </option>
+          ))}
+        </select>
 
-      {currentUser && matchedUsers.length === 0 && (
-        <p>No matches found</p>
-      )}
+        <h2 style={sectionTitle}>Matches For You</h2>
 
-      {matchedUsers.map((user) => (
-        <div key={user._id} style={cardStyle}>
-          <p><strong>Name:</strong> {user.name}</p>
-          <p><strong>Offers:</strong> {user.skillOffered}</p>
-        </div>
-      ))}
+        {!currentUser && <p>Please select a user</p>}
+
+        {currentUser && matchedUsers.length === 0 && (
+          <p>No matches found</p>
+        )}
+
+        {matchedUsers.map((user) => (
+          <div key={user._id} style={cardStyle}>
+            <p><strong>Name:</strong> {user.name}</p>
+            <p><strong>Offers:</strong> {user.skillOffered}</p>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
 
-// STYLES
+// 🔥 STYLES
+
 const containerStyle = {
-  maxWidth: "600px",
+  maxWidth: "700px",
   margin: "40px auto",
-  padding: "20px",
-  borderRadius: "10px",
-  boxShadow: "0 0 10px rgba(0,0,0,0.1)",
-  fontFamily: "Arial",
+  padding: "25px",
+  borderRadius: "12px",
+  backgroundColor: "#ffffff",
+  boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
+  fontFamily: "Segoe UI, sans-serif",
 };
 
 const inputStyle = {
   width: "100%",
-  padding: "10px",
-  marginBottom: "10px",
-  borderRadius: "5px",
-  border: "1px solid #ccc",
+  padding: "12px",
+  marginBottom: "12px",
+  borderRadius: "8px",
+  border: "1px solid #ddd",
+  fontSize: "14px",
 };
 
 const buttonStyle = {
   width: "100%",
-  padding: "10px",
-  backgroundColor: "#007bff",
+  padding: "12px",
+  background: "linear-gradient(90deg, #007bff, #00c6ff)",
   color: "white",
   border: "none",
-  borderRadius: "5px",
+  borderRadius: "8px",
   cursor: "pointer",
   marginBottom: "20px",
+  fontWeight: "bold",
 };
 
 const cardStyle = {
-  padding: "10px",
-  marginBottom: "10px",
-  border: "1px solid #ddd",
-  borderRadius: "5px",
+  padding: "15px",
+  marginBottom: "12px",
+  borderRadius: "8px",
+  backgroundColor: "#f9f9f9",
+  border: "1px solid #eee",
 };
 
 const editBtn = {
   marginTop: "10px",
   marginRight: "5px",
-  padding: "5px 10px",
-  backgroundColor: "orange",
+  padding: "6px 12px",
+  backgroundColor: "#ff9800",
   color: "white",
   border: "none",
   borderRadius: "5px",
@@ -214,8 +219,8 @@ const editBtn = {
 
 const deleteBtn = {
   marginTop: "10px",
-  padding: "5px 10px",
-  backgroundColor: "red",
+  padding: "6px 12px",
+  backgroundColor: "#f44336",
   color: "white",
   border: "none",
   borderRadius: "5px",
@@ -226,6 +231,10 @@ const selectStyle = {
   width: "100%",
   padding: "10px",
   marginBottom: "10px",
+};
+
+const sectionTitle = {
+  marginTop: "25px",
 };
 
 export default App;
