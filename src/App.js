@@ -4,13 +4,20 @@ function App() {
   const [name, setName] = useState("");
   const [skillOffered, setSkillOffered] = useState("");
   const [skillNeeded, setSkillNeeded] = useState("");
+  const [users, setUsers] = useState([]);
 
   const handleSubmit = () => {
-    console.log({
+    const newUser = {
       name,
       skillOffered,
       skillNeeded,
-    });
+    };
+
+    setUsers([...users, newUser]);
+
+    setName("");
+    setSkillOffered("");
+    setSkillNeeded("");
   };
 
   return (
@@ -39,6 +46,17 @@ function App() {
       <br /><br />
 
       <button onClick={handleSubmit}>Submit</button>
+
+      <h2>Users</h2>
+
+      {users.map((user, index) => (
+        <div key={index}>
+          <p><strong>Name:</strong> {user.name}</p>
+          <p><strong>Offers:</strong> {user.skillOffered}</p>
+          <p><strong>Needs:</strong> {user.skillNeeded}</p>
+          <hr />
+        </div>
+      ))}
     </div>
   );
 }
