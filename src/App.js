@@ -8,7 +8,6 @@ function App() {
   const [users, setUsers] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
 
-  // 🔥 FETCH USERS FROM BACKEND
   useEffect(() => {
     fetchUsers();
   }, []);
@@ -22,19 +21,13 @@ function App() {
     }
   };
 
-  // 🔥 SEND DATA TO BACKEND + VALIDATION
   const handleSubmit = async () => {
-    // ✅ VALIDATION
     if (!name || !skillOffered || !skillNeeded) {
       alert("All fields are required");
       return;
     }
 
-    const newUser = {
-      name,
-      skillOffered,
-      skillNeeded,
-    };
+    const newUser = { name, skillOffered, skillNeeded };
 
     try {
       await axios.post("http://localhost:5000/add-user", newUser);
@@ -48,7 +41,17 @@ function App() {
     setSkillNeeded("");
   };
 
-  // 🔥 IMPROVED MATCHING LOGIC
+  // 🔴 DELETE FUNCTION
+  const handleDelete = async (id) => {
+    try {
+      await axios.delete(`http://localhost:5000/delete-user/${id}`);
+      fetchUsers();
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  // MATCHING LOGIC
   const matchedUsers = users.filter((user) => {
     if (!currentUser) return false;
 
@@ -56,53 +59,65 @@ function App() {
       user.skillOffered
         .toLowerCase()
         .includes(currentUser.skillNeeded.toLowerCase()) &&
-      user.name !== currentUser.name
+      user._id !== currentUser._id
     );
   });
 
   return (
-    <div style={{ padding: "20px" }}>
+    <div style={containerStyle}>
       <h1>SRM Skill Exchange</h1>
 
       <input
         placeholder="Your Name"
         value={name}
         onChange={(e) => setName(e.target.value)}
+        style={inputStyle}
       />
-      <br /><br />
 
       <input
         placeholder="Skill You Offer"
         value={skillOffered}
         onChange={(e) => setSkillOffered(e.target.value)}
+        style={inputStyle}
       />
-      <br /><br />
 
       <input
         placeholder="Skill You Need"
         value={skillNeeded}
         onChange={(e) => setSkillNeeded(e.target.value)}
+        style={inputStyle}
       />
-      <br /><br />
 
-      <button onClick={handleSubmit}>Submit</button>
+      <button onClick={handleSubmit} style={buttonStyle}>
+        Submit
+      </button>
 
       <h2>Users</h2>
 
-      {users.map((user, index) => (
-        <div key={index}>
+      {users.map((user) => (
+        <div key={user._id} style={cardStyle}>
           <p><strong>Name:</strong> {user.name}</p>
           <p><strong>Offers:</strong> {user.skillOffered}</p>
           <p><strong>Needs:</strong> {user.skillNeeded}</p>
-          <hr />
+
+          <button
+            onClick={() => handleDelete(user._id)}
+            style={deleteBtn}
+          >
+            Delete
+          </button>
         </div>
       ))}
 
       <h2>Select User</h2>
-      <select onChange={(e) => setCurrentUser(users[e.target.value])}>
+
+      <select
+        onChange={(e) => setCurrentUser(users[e.target.value])}
+        style={selectStyle}
+      >
         <option value="">-- Select User --</option>
         {users.map((user, index) => (
-          <option key={index} value={index}>
+          <option key={user._id} value={index}>
             {user.name}
           </option>
         ))}
@@ -116,15 +131,66 @@ function App() {
         <p>No matches found</p>
       )}
 
-      {matchedUsers.map((user, index) => (
-        <div key={index}>
+      {matchedUsers.map((user) => (
+        <div key={user._id} style={cardStyle}>
           <p><strong>Name:</strong> {user.name}</p>
           <p><strong>Offers:</strong> {user.skillOffered}</p>
-          <hr />
         </div>
       ))}
     </div>
   );
 }
+
+// STYLES
+const containerStyle = {
+  maxWidth: "600px",
+  margin: "40px auto",
+  padding: "20px",
+  borderRadius: "10px",
+  boxShadow: "0 0 10px rgba(0,0,0,0.1)",
+  fontFamily: "Arial",
+};
+
+const inputStyle = {
+  width: "100%",
+  padding: "10px",
+  marginBottom: "10px",
+  borderRadius: "5px",
+  border: "1px solid #ccc",
+};
+
+const buttonStyle = {
+  width: "100%",
+  padding: "10px",
+  backgroundColor: "#007bff",
+  color: "white",
+  border: "none",
+  borderRadius: "5px",
+  cursor: "pointer",
+  marginBottom: "20px",
+};
+
+const cardStyle = {
+  padding: "10px",
+  marginBottom: "10px",
+  border: "1px solid #ddd",
+  borderRadius: "5px",
+};
+
+const deleteBtn = {
+  marginTop: "10px",
+  padding: "5px 10px",
+  backgroundColor: "red",
+  color: "white",
+  border: "none",
+  borderRadius: "5px",
+  cursor: "pointer",
+};
+
+const selectStyle = {
+  width: "100%",
+  padding: "10px",
+  marginBottom: "10px",
+};
 
 export default App;

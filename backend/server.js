@@ -24,7 +24,7 @@ app.get("/", (req, res) => {
 
 // ================== REAL ROUTES ==================
 
-// 🔹 SAVE USER
+// 🔹 ADD USER
 app.post("/add-user", async (req, res) => {
   try {
     const user = new User(req.body);
@@ -40,6 +40,16 @@ app.get("/users", async (req, res) => {
   try {
     const users = await User.find();
     res.json(users);
+  } catch (err) {
+    res.status(500).send(err);
+  }
+});
+
+// 🔴 DELETE USER
+app.delete("/delete-user/:id", async (req, res) => {
+  try {
+    await User.findByIdAndDelete(req.params.id);
+    res.send("User deleted successfully");
   } catch (err) {
     res.status(500).send(err);
   }
