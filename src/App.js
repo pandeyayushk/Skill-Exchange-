@@ -9,6 +9,9 @@ function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [editingUser, setEditingUser] = useState(null);
 
+  // 🔍 SEARCH STATE
+  const [search, setSearch] = useState("");
+
   useEffect(() => {
     fetchUsers();
   }, []);
@@ -60,6 +63,16 @@ function App() {
     }
   };
 
+  // 🔍 FILTER LOGIC
+  const filteredUsers = users.filter((user) => {
+    return (
+      user.name.toLowerCase().includes(search.toLowerCase()) ||
+      user.skillOffered.toLowerCase().includes(search.toLowerCase()) ||
+      user.skillNeeded.toLowerCase().includes(search.toLowerCase())
+    );
+  });
+
+  // MATCHING LOGIC
   const matchedUsers = users.filter((user) => {
     if (!currentUser) return false;
 
@@ -78,6 +91,7 @@ function App() {
           🚀 SRM Skill Exchange
         </h1>
 
+        {/* INPUTS */}
         <input
           placeholder="Your Name"
           value={name}
@@ -103,9 +117,18 @@ function App() {
           {editingUser ? "Update" : "Submit"}
         </button>
 
+        {/* 🔍 SEARCH BAR */}
+        <input
+          placeholder="Search by name or skill..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          style={inputStyle}
+        />
+
         <h2 style={sectionTitle}>Users</h2>
 
-        {users.map((user) => (
+        {/* 🔥 USE FILTERED USERS */}
+        {filteredUsers.map((user) => (
           <div key={user._id} style={cardStyle}>
             <p><strong>Name:</strong> {user.name}</p>
             <p><strong>Offers:</strong> {user.skillOffered}</p>
@@ -165,8 +188,7 @@ function App() {
   );
 }
 
-// 🔥 STYLES
-
+// STYLES (same as before)
 const containerStyle = {
   maxWidth: "700px",
   margin: "40px auto",
@@ -183,7 +205,6 @@ const inputStyle = {
   marginBottom: "12px",
   borderRadius: "8px",
   border: "1px solid #ddd",
-  fontSize: "14px",
 };
 
 const buttonStyle = {
@@ -195,7 +216,6 @@ const buttonStyle = {
   borderRadius: "8px",
   cursor: "pointer",
   marginBottom: "20px",
-  fontWeight: "bold",
 };
 
 const cardStyle = {
@@ -214,7 +234,6 @@ const editBtn = {
   color: "white",
   border: "none",
   borderRadius: "5px",
-  cursor: "pointer",
 };
 
 const deleteBtn = {
@@ -224,7 +243,6 @@ const deleteBtn = {
   color: "white",
   border: "none",
   borderRadius: "5px",
-  cursor: "pointer",
 };
 
 const selectStyle = {
