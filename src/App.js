@@ -1,4 +1,5 @@
-import { useState } from "react";
+import axios from "axios";
+import { useEffect, useState } from "react";
 
 function App() {
   const [name, setName] = useState("");
@@ -7,23 +8,41 @@ function App() {
   const [users, setUsers] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
 
-  const handleSubmit = () => {
+  // 🔥 FETCH USERS FROM BACKEND
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const fetchUsers = async () => {
+    try {
+      const res = await axios.get("http://localhost:5000/users");
+      setUsers(res.data);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  // 🔥 SEND DATA TO BACKEND
+  const handleSubmit = async () => {
     const newUser = {
       name,
       skillOffered,
       skillNeeded,
     };
 
-    setUsers([...users, newUser]);
-
-  
+    try {
+      await axios.post("http://localhost:5000/add-user", newUser);
+      fetchUsers(); // refresh users
+    } catch (err) {
+      console.log(err);
+    }
 
     setName("");
     setSkillOffered("");
     setSkillNeeded("");
   };
 
- 
+  // MATCHING LOGIC
   const matchedUsers = users.filter(
     (user) =>
       currentUser &&
@@ -70,7 +89,6 @@ function App() {
         </div>
       ))}
 
-      
       <h2>Select User</h2>
       <select
         onChange={(e) => setCurrentUser(users[e.target.value])}
