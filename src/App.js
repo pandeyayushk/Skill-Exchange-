@@ -8,8 +8,6 @@ function App() {
   const [users, setUsers] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
   const [editingUser, setEditingUser] = useState(null);
-
-  // 🔍 SEARCH STATE
   const [search, setSearch] = useState("");
 
   useEffect(() => {
@@ -17,12 +15,8 @@ function App() {
   }, []);
 
   const fetchUsers = async () => {
-    try {
-      const res = await axios.get("http://localhost:5000/users");
-      setUsers(res.data);
-    } catch (err) {
-      console.log(err);
-    }
+    const res = await axios.get("http://localhost:5000/users");
+    setUsers(res.data);
   };
 
   const handleSubmit = async () => {
@@ -33,21 +27,17 @@ function App() {
 
     const newUser = { name, skillOffered, skillNeeded };
 
-    try {
-      if (editingUser) {
-        await axios.put(
-          `http://localhost:5000/update-user/${editingUser._id}`,
-          newUser
-        );
-        setEditingUser(null);
-      } else {
-        await axios.post("http://localhost:5000/add-user", newUser);
-      }
-
-      fetchUsers();
-    } catch (err) {
-      console.log(err);
+    if (editingUser) {
+      await axios.put(
+        `http://localhost:5000/update-user/${editingUser._id}`,
+        newUser
+      );
+      setEditingUser(null);
+    } else {
+      await axios.post("http://localhost:5000/add-user", newUser);
     }
+
+    fetchUsers();
 
     setName("");
     setSkillOffered("");
@@ -55,111 +45,110 @@ function App() {
   };
 
   const handleDelete = async (id) => {
-    try {
-      await axios.delete(`http://localhost:5000/delete-user/${id}`);
-      fetchUsers();
-    } catch (err) {
-      console.log(err);
-    }
+    await axios.delete(`http://localhost:5000/delete-user/${id}`);
+    fetchUsers();
   };
 
-  // 🔍 FILTER LOGIC
-  const filteredUsers = users.filter((user) => {
-    return (
-      user.name.toLowerCase().includes(search.toLowerCase()) ||
-      user.skillOffered.toLowerCase().includes(search.toLowerCase()) ||
-      user.skillNeeded.toLowerCase().includes(search.toLowerCase())
-    );
-  });
+  // 🔍 SEARCH
+  const filteredUsers = users.filter((user) =>
+    (user.name + user.skillOffered + user.skillNeeded)
+      .toLowerCase()
+      .includes(search.toLowerCase())
+  );
 
-  // MATCHING LOGIC
+  // 🔥 SMART MATCHING
+  const parseSkills = (skills) =>
+    skills.toLowerCase().split(",").map((s) => s.trim());
+
   const matchedUsers = users.filter((user) => {
     if (!currentUser) return false;
 
+    const offered = parseSkills(user.skillOffered);
+    const needed = parseSkills(currentUser.skillNeeded);
+
     return (
-      user.skillOffered
-        .toLowerCase()
-        .includes(currentUser.skillNeeded.toLowerCase()) &&
+      offered.some((skill) => needed.includes(skill)) &&
       user._id !== currentUser._id
     );
   });
 
   return (
-    <div style={{ backgroundColor: "#f5f7fa", minHeight: "100vh", padding: "20px" }}>
+    <div style={pageStyle}>
       <div style={containerStyle}>
-        <h1 style={{ textAlign: "center", marginBottom: "20px" }}>
-          🚀 SRM Skill Exchange
-        </h1>
+        <h1 style={titleStyle}>🚀 SRM Skill Exchange</h1>
 
-        {/* INPUTS */}
+        {/* FORM */}
+        <div style={formStyle}>
+          <input
+            placeholder="Your Name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            style={inputStyle}
+          />
+
+          <input
+            placeholder="Skills You Offer (comma separated)"
+            value={skillOffered}
+            onChange={(e) => setSkillOffered(e.target.value)}
+            style={inputStyle}
+          />
+
+          <input
+            placeholder="Skills You Need (comma separated)"
+            value={skillNeeded}
+            onChange={(e) => setSkillNeeded(e.target.value)}
+            style={inputStyle}
+          />
+
+          <button onClick={handleSubmit} style={buttonStyle}>
+            {editingUser ? "Update" : "Submit"}
+          </button>
+        </div>
+
+        {/* SEARCH */}
         <input
-          placeholder="Your Name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          style={inputStyle}
-        />
-
-        <input
-          placeholder="Skill You Offer"
-          value={skillOffered}
-          onChange={(e) => setSkillOffered(e.target.value)}
-          style={inputStyle}
-        />
-
-        <input
-          placeholder="Skill You Need"
-          value={skillNeeded}
-          onChange={(e) => setSkillNeeded(e.target.value)}
-          style={inputStyle}
-        />
-
-        <button onClick={handleSubmit} style={buttonStyle}>
-          {editingUser ? "Update" : "Submit"}
-        </button>
-
-        {/* 🔍 SEARCH BAR */}
-        <input
-          placeholder="Search by name or skill..."
+          placeholder="🔍 Search by name or skill..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           style={inputStyle}
         />
 
+        {/* USERS */}
         <h2 style={sectionTitle}>Users</h2>
 
-        {/* 🔥 USE FILTERED USERS */}
         {filteredUsers.map((user) => (
           <div key={user._id} style={cardStyle}>
-            <p><strong>Name:</strong> {user.name}</p>
-            <p><strong>Offers:</strong> {user.skillOffered}</p>
-            <p><strong>Needs:</strong> {user.skillNeeded}</p>
+            <p><strong>{user.name}</strong></p>
+            <p>Offers: {user.skillOffered}</p>
+            <p>Needs: {user.skillNeeded}</p>
 
             <button
+              style={editBtn}
               onClick={() => {
                 setEditingUser(user);
                 setName(user.name);
                 setSkillOffered(user.skillOffered);
                 setSkillNeeded(user.skillNeeded);
               }}
-              style={editBtn}
             >
               Edit
             </button>
 
             <button
-              onClick={() => handleDelete(user._id)}
               style={deleteBtn}
+              onClick={() => handleDelete(user._id)}
             >
               Delete
             </button>
           </div>
         ))}
 
+        {/* SELECT USER */}
         <h2 style={sectionTitle}>Select User</h2>
 
         <select
           onChange={(e) => setCurrentUser(users[e.target.value])}
-          style={selectStyle}
+          style={inputStyle}
         >
           <option value="">-- Select User --</option>
           {users.map((user, index) => (
@@ -169,18 +158,15 @@ function App() {
           ))}
         </select>
 
-        <h2 style={sectionTitle}>Matches For You</h2>
+        {/* MATCHES */}
+        <h2 style={sectionTitle}>Matches</h2>
 
-        {!currentUser && <p>Please select a user</p>}
-
-        {currentUser && matchedUsers.length === 0 && (
-          <p>No matches found</p>
-        )}
+        {!currentUser && <p>Select a user to see matches</p>}
 
         {matchedUsers.map((user) => (
           <div key={user._id} style={cardStyle}>
-            <p><strong>Name:</strong> {user.name}</p>
-            <p><strong>Offers:</strong> {user.skillOffered}</p>
+            <p><strong>{user.name}</strong></p>
+            <p>Offers: {user.skillOffered}</p>
           </div>
         ))}
       </div>
@@ -188,19 +174,34 @@ function App() {
   );
 }
 
-// STYLES (same as before)
+// 🎨 STYLES
+
+const pageStyle = {
+  backgroundColor: "#f4f6f9",
+  minHeight: "100vh",
+  padding: "20px",
+};
+
 const containerStyle = {
   maxWidth: "700px",
-  margin: "40px auto",
+  margin: "auto",
   padding: "25px",
   borderRadius: "12px",
-  backgroundColor: "#ffffff",
+  backgroundColor: "white",
   boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
-  fontFamily: "Segoe UI, sans-serif",
+};
+
+const titleStyle = {
+  textAlign: "center",
+  marginBottom: "20px",
+};
+
+const formStyle = {
+  display: "flex",
+  flexDirection: "column",
 };
 
 const inputStyle = {
-  width: "100%",
   padding: "12px",
   marginBottom: "12px",
   borderRadius: "8px",
@@ -208,27 +209,25 @@ const inputStyle = {
 };
 
 const buttonStyle = {
-  width: "100%",
   padding: "12px",
   background: "linear-gradient(90deg, #007bff, #00c6ff)",
   color: "white",
   border: "none",
   borderRadius: "8px",
   cursor: "pointer",
-  marginBottom: "20px",
+  marginBottom: "15px",
 };
 
 const cardStyle = {
   padding: "15px",
-  marginBottom: "12px",
+  marginBottom: "10px",
   borderRadius: "8px",
   backgroundColor: "#f9f9f9",
   border: "1px solid #eee",
 };
 
 const editBtn = {
-  marginTop: "10px",
-  marginRight: "5px",
+  marginRight: "10px",
   padding: "6px 12px",
   backgroundColor: "#ff9800",
   color: "white",
@@ -237,18 +236,11 @@ const editBtn = {
 };
 
 const deleteBtn = {
-  marginTop: "10px",
   padding: "6px 12px",
   backgroundColor: "#f44336",
   color: "white",
   border: "none",
   borderRadius: "5px",
-};
-
-const selectStyle = {
-  width: "100%",
-  padding: "10px",
-  marginBottom: "10px",
 };
 
 const sectionTitle = {
