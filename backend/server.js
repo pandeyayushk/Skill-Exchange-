@@ -4,12 +4,14 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 
+const User = require("./models/User");
+
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-// 🔥 CONNECT TO MONGODB (SAFE)
+// 🔥 CONNECT TO MONGODB
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB connected"))
@@ -20,14 +22,30 @@ app.get("/", (req, res) => {
   res.send("API running");
 });
 
-// ================== ROUTES (NEXT STEP READY) ==================
+// ================== REAL ROUTES ==================
 
-// TEMP test route
-app.get("/users", (req, res) => {
-  res.send("Users route working");
+// 🔹 SAVE USER
+app.post("/add-user", async (req, res) => {
+  try {
+    const user = new User(req.body);
+    await user.save();
+    res.send("User saved successfully");
+  } catch (err) {
+    res.status(500).send(err);
+  }
 });
 
-// =============================================================
+// 🔹 GET USERS
+app.get("/users", async (req, res) => {
+  try {
+    const users = await User.find();
+    res.json(users);
+  } catch (err) {
+    res.status(500).send(err);
+  }
+});
+
+// =================================================
 
 // start server
 app.listen(5000, () => {
