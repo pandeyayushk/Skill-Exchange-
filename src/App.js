@@ -1,23 +1,44 @@
-import logo from './logo.svg';
-import './App.css';
+import { useState } from "react";
 
 function App() {
+  const [name, setName] = useState("");
+  const [skillOffered, setSkillOffered] = useState("");
+  const [skillNeeded, setSkillNeeded] = useState("");
+
+  const handleSubmit = () => {
+    console.log({
+      name,
+      skillOffered,
+      skillNeeded,
+    });
+  };
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div style={{ padding: "20px" }}>
+      <h1>SRM Skill Exchange</h1>
+
+      <input
+        placeholder="Your Name"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+      />
+      <br /><br />
+
+      <input
+        placeholder="Skill You Offer"
+        value={skillOffered}
+        onChange={(e) => setSkillOffered(e.target.value)}
+      />
+      <br /><br />
+
+      <input
+        placeholder="Skill You Need"
+        value={skillNeeded}
+        onChange={(e) => setSkillNeeded(e.target.value)}
+      />
+      <br /><br />
+
+      <button onClick={handleSubmit}>Submit</button>
     </div>
   );
 }
