@@ -7,6 +7,7 @@ function App() {
   const [skillNeeded, setSkillNeeded] = useState("");
   const [users, setUsers] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
+  const [editingUser, setEditingUser] = useState(null);
 
   useEffect(() => {
     fetchUsers();
@@ -30,7 +31,18 @@ function App() {
     const newUser = { name, skillOffered, skillNeeded };
 
     try {
-      await axios.post("http://localhost:5000/add-user", newUser);
+      if (editingUser) {
+        // UPDATE
+        await axios.put(
+          `http://localhost:5000/update-user/${editingUser._id}`,
+          newUser
+        );
+        setEditingUser(null);
+      } else {
+        // CREATE
+        await axios.post("http://localhost:5000/add-user", newUser);
+      }
+
       fetchUsers();
     } catch (err) {
       console.log(err);
@@ -41,7 +53,6 @@ function App() {
     setSkillNeeded("");
   };
 
-  // 🔴 DELETE FUNCTION
   const handleDelete = async (id) => {
     try {
       await axios.delete(`http://localhost:5000/delete-user/${id}`);
@@ -51,7 +62,6 @@ function App() {
     }
   };
 
-  // MATCHING LOGIC
   const matchedUsers = users.filter((user) => {
     if (!currentUser) return false;
 
@@ -89,7 +99,7 @@ function App() {
       />
 
       <button onClick={handleSubmit} style={buttonStyle}>
-        Submit
+        {editingUser ? "Update" : "Submit"}
       </button>
 
       <h2>Users</h2>
@@ -100,6 +110,20 @@ function App() {
           <p><strong>Offers:</strong> {user.skillOffered}</p>
           <p><strong>Needs:</strong> {user.skillNeeded}</p>
 
+          {/* EDIT BUTTON */}
+          <button
+            onClick={() => {
+              setEditingUser(user);
+              setName(user.name);
+              setSkillOffered(user.skillOffered);
+              setSkillNeeded(user.skillNeeded);
+            }}
+            style={editBtn}
+          >
+            Edit
+          </button>
+
+          {/* DELETE BUTTON */}
           <button
             onClick={() => handleDelete(user._id)}
             style={deleteBtn}
@@ -175,6 +199,17 @@ const cardStyle = {
   marginBottom: "10px",
   border: "1px solid #ddd",
   borderRadius: "5px",
+};
+
+const editBtn = {
+  marginTop: "10px",
+  marginRight: "5px",
+  padding: "5px 10px",
+  backgroundColor: "orange",
+  color: "white",
+  border: "none",
+  borderRadius: "5px",
+  cursor: "pointer",
 };
 
 const deleteBtn = {
