@@ -3,123 +3,127 @@ require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-
-const bcrypt = require("bcryptjs");
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
+const mongoSanitize = require("express-mongo-sanitize");
+const http = require("http");
+const { Server } = require("socket.io");
 const jwt = require("jsonwebtoken");
 
-const User = require("./models/User");
+const authRoutes = require("./routes/authRoutes");
+const userRoutes = require("./routes/userRoutes");
+const chatRoutes = require("./routes/chatRoutes");
 
 const app = express();
+const server = http.createServer(app);
 
+// Fail fast if DB is down (avoid request buffering timeouts)
+// We'll start listening only after DB is connected.
+mongoose.set("bufferCommands", false);
+
+// Socket.io setup
+const io = new Server(server, {
+  cors: {
+    origin: "*", // Will restrict this in production
+    methods: ["GET", "POST"]
+  }
+});
+
+// Middleware
+app.use(helmet()); // Secure HTTP headers
 app.use(cors());
 app.use(express.json());
 
+// Rate Limiting for Auth
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20, // limit each IP to 20 requests per windowMs
+  message: { error: "Too many requests from this IP, please try again later." }
+});
+app.use("/api/auth", authLimiter);
+
 // 🔥 CONNECT DB
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB connected"))
-  .catch((err) => console.log(err));
+const LOCAL_MONGO_URI = "mongodb://127.0.0.1:27017/skill-exchange";
+const PRIMARY_MONGO_URI = process.env.MONGO_URI || LOCAL_MONGO_URI;
 
-// ================= AUTH =================
-
-// 🔐 SIGNUP
-app.post("/signup", async (req, res) => {
-  const { name, email, password } = req.body;
-
-  try {
-    // ✅ SRM EMAIL ONLY
-    if (!email.endsWith("@srmist.edu.in")) {
-      return res.status(400).send("Only SRM emails allowed");
+async function connectMongoWithFallback() {
+  const tryConnect = async (uri, label) => {
+    try {
+      await mongoose.connect(uri, { serverSelectionTimeoutMS: 10000 });
+      console.log(`MongoDB connected (${label})`);
+      return true;
+    } catch (err) {
+      console.error(`MongoDB connection error (${label}):`, err?.message || err);
+      return false;
     }
+  };
 
-    // ✅ CHECK IF USER EXISTS
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).send("User already exists");
-    }
+  const primaryOk = await tryConnect(PRIMARY_MONGO_URI, process.env.MONGO_URI ? "MONGO_URI" : "local");
+  if (primaryOk) return;
 
-    // 🔐 HASH PASSWORD
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const user = new User({
-      name,
-      email,
-      password: hashedPassword,
-    });
-
-    await user.save();
-
-    res.send("User registered successfully");
-  } catch (err) {
-    res.status(500).send(err);
+  if (process.env.MONGO_URI) {
+    console.error("Falling back to local MongoDB. Start MongoDB at 127.0.0.1:27017 to use the app.");
+    await tryConnect(LOCAL_MONGO_URI, "local fallback");
   }
+}
+
+// We'll connect before accepting requests.
+
+// ================= ROUTES =================
+app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/chat", chatRoutes);
+
+// ================= SOCKET.IO =================
+io.use((socket, next) => {
+  const token = socket.handshake.auth.token;
+  if (!token) return next(new Error("Authentication error"));
+  
+  // Must match authController's signing secret fallback
+  jwt.verify(token, process.env.JWT_SECRET || "secret123", (err, decoded) => {
+    if (err) return next(new Error("Authentication error"));
+    socket.userId = decoded.id;
+    next();
+  });
 });
 
-// 🔐 LOGIN
-app.post("/login", async (req, res) => {
-  const { email, password } = req.body;
+const userSockets = new Map(); // Maps userId to socketId
 
-  try {
-    // ✅ SRM EMAIL CHECK
-    if (!email.endsWith("@srmist.edu.in")) {
-      return res.status(400).send("Invalid domain");
-    }
+io.on("connection", (socket) => {
+  console.log(`User connected: ${socket.userId}`);
+  userSockets.set(socket.userId, socket.id);
 
-    const user = await User.findOne({ email });
-    if (!user) return res.status(400).send("User not found");
-
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).send("Wrong password");
-
-    const token = jwt.sign({ id: user._id }, "secret123");
-
-    // ❌ DO NOT SEND PASSWORD
-    res.json({
-      token,
-      user: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-      },
-    });
-  } catch (err) {
-    res.status(500).send(err);
-  }
+  socket.on("disconnect", () => {
+    console.log(`User disconnected: ${socket.userId}`);
+    userSockets.delete(socket.userId);
+  });
 });
 
-// ================= USER ROUTES =================
-
-// ADD USER
-app.post("/add-user", async (req, res) => {
-  try {
-    const user = new User(req.body);
-    await user.save();
-    res.send("User saved");
-  } catch (err) {
-    res.status(500).send(err);
-  }
-});
-
-// GET USERS
-app.get("/users", async (req, res) => {
-  const users = await User.find();
-  res.json(users);
-});
-
-// UPDATE
-app.put("/update-user/:id", async (req, res) => {
-  await User.findByIdAndUpdate(req.params.id, req.body);
-  res.send("Updated");
-});
-
-// DELETE
-app.delete("/delete-user/:id", async (req, res) => {
-  await User.findByIdAndDelete(req.params.id);
-  res.send("Deleted");
-});
+// Make io accessible in controllers
+app.set("io", io);
+app.set("userSockets", userSockets);
 
 // ================= SERVER =================
+const PORT = process.env.PORT || 5000;
 
-app.listen(5000, () => {
-  console.log("Server running on port 5000");
+async function start() {
+  await connectMongoWithFallback();
+  server.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}
+
+start().catch((err) => {
+  console.error("Fatal startup error:", err?.message || err);
+  process.exit(1);
+});
+
+// Friendlier startup errors (e.g., port already in use)
+server.on("error", (err) => {
+  if (err && err.code === "EADDRINUSE") {
+    console.error(`Port ${PORT} is already in use.`);
+    console.error("Close the process using it, or set a different PORT and retry.");
+    console.error("Example (PowerShell): $env:PORT=5001; node server.js");
+    process.exit(1);
+  }
 });

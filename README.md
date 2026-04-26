@@ -1,70 +1,88 @@
-# Getting Started with Create React App
+# Skill Exchange
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A beginner full‑stack app where SRM students can list the skills they **offer** and **need**, get automatic matches, connect with each other, and chat in real time.
 
-## Available Scripts
+## Features
+- **SRM-only auth**: signup/login restricted to `@srmist.edu.in`
+- **Profile skills**: update “skills offered” and “skills needed”
+- **Automatic matches**: finds users who offer what you need
+- **Connection requests**: send, accept, reject, disconnect
+- **Chat**: message your connections
+- **Real-time messaging**: Socket.IO delivers messages instantly when the receiver is online
 
-In the project directory, you can run:
+## Tech stack
+- **Frontend**: React (CRA), React Router, Axios, Socket.IO Client, React Hot Toast
+- **Backend**: Node.js, Express, Mongoose/MongoDB, JWT, Socket.IO
 
-### `npm start`
+## Project structure
+- `src/`: React frontend
+- `backend/`: Express API + Socket.IO server
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## Prerequisites
+- Node.js + npm
+- MongoDB:
+  - **Local MongoDB** at `mongodb://127.0.0.1:27017` (recommended for local dev), or
+  - MongoDB Atlas (make sure network/IP access is configured)
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Environment variables
+Create `backend/.env` (see `backend/.env.example`).
 
-### `npm test`
+- **`MONGO_URI`**: Mongo connection string
+- **`JWT_SECRET`**: secret used to sign/verify JWTs (recommended to set)
+- **`PORT`**: backend port (default `5000`)
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+Optional frontend env:
+- **`REACT_APP_API_URL`**: backend origin for Socket.IO (defaults to `http://localhost:5000`)
 
-### `npm run build`
+## Run locally
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### 1) Start backend
+From `backend/`:
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+```bash
+node server.js
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+Backend runs on `http://localhost:5000`.
 
-### `npm run eject`
+### 2) Start frontend
+From repo root:
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+```bash
+npm install
+npm start
+```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+Frontend runs on `http://localhost:3000`.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## API overview
+Base URL: `http://localhost:5000/api`
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+- **Auth**
+  - `POST /auth/signup`
+  - `POST /auth/login`
+- **Users**
+  - `PUT /users/profile`
+  - `GET /users/matches`
+  - `POST /users/connect`
+  - `GET /users/requests`
+  - `POST /users/accept`
+  - `POST /users/reject`
+  - `GET /users/connections`
+  - `POST /users/disconnect`
+- **Chat**
+  - `GET /chat/:connectionId`
+  - `POST /chat/send`
 
-## Learn More
+## Socket.IO (real-time)
+- Socket server runs on `http://localhost:5000`
+- Client connects with:
+  - `auth: { token }` where `token` is the JWT from login
+- Server emits:
+  - `newMessage` to the receiver when they’re online
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+## Deployment notes (quick checklist)
+- Use a production MongoDB (Atlas) and configure network access
+- Set a strong `JWT_SECRET`
+- Restrict CORS + Socket.IO origins to your frontend domain
+- Set frontend API base URL / environment variables to point to your deployed backend
